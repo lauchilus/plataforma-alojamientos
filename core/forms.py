@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from decimal import Decimal
 from django.db import transaction
 from django.utils.crypto import get_random_string
 from .models import Accommodation, BusinessAccount, Complex, PriceRule, Reservation, Guest
@@ -30,6 +31,9 @@ class AccommodationForm(forms.ModelForm):
         if commit: obj.full_clean(); obj.save()
         return obj
 class PriceRuleForm(forms.ModelForm):
+    nightly_rate=forms.DecimalField(label="Precio por noche",max_digits=12,decimal_places=2,min_value=Decimal("0.01"))
+    guest_count=forms.IntegerField(label="Cantidad de huéspedes",min_value=1,required=False)
+    minimum_nights=forms.IntegerField(label="Mínimo de noches",min_value=1)
     class Meta:
         model=PriceRule; fields=["accommodation","name","guest_count","valid_from","valid_until","nightly_rate","currency","minimum_nights","is_active"]
         widgets={"valid_from":forms.DateInput(attrs={"type":"date"}),"valid_until":forms.DateInput(attrs={"type":"date"})}
@@ -41,11 +45,12 @@ class PriceRuleForm(forms.ModelForm):
         if commit: obj.full_clean(); obj.save()
         return obj
 class ReservationForm(forms.ModelForm):
+    guest_count=forms.IntegerField(label="Huéspedes",min_value=1)
+    agreed_price=forms.DecimalField(label="Importe acordado",max_digits=12,decimal_places=2,min_value=Decimal("0.01"),required=False,help_text="Dejar vacío para usar el precio calculado.")
     guest_name=forms.CharField(label="Nombre y apellido",max_length=180)
     guest_phone=forms.CharField(label="Teléfono",max_length=40,required=False)
     guest_email=forms.EmailField(label="Correo electrónico",required=False)
     guest_document=forms.CharField(label="Documento",max_length=50,required=False)
-    agreed_price=forms.DecimalField(label="Importe acordado",max_digits=12,decimal_places=2,required=False,help_text="Dejar vacío para usar el precio calculado.")
     class Meta:
         model=Reservation
         fields=["accommodation","check_in","check_out","guest_count","status","currency","notes"]

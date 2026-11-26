@@ -13,6 +13,7 @@ urlpatterns=[
  path("alojamientos/<int:pk>/editar/",views.accommodation_edit,name="accommodation_edit"),
  path("precios/",views.price_rule_list,name="price_rule_list"),
  path("precios/nueva/",views.price_rule_create,name="price_rule_create"),
+ path("precios/<int:pk>/editar/",views.price_rule_edit,name="price_rule_edit"),
  path("reservas/",views.reservation_list,name="reservation_list"),
  path("reservas/nueva/",views.reservation_create,name="reservation_create"),
  path("reservas/<int:pk>/editar/",views.reservation_edit,name="reservation_edit"),

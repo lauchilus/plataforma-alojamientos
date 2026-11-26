@@ -101,6 +101,17 @@ def price_rule_create(request):
         form.save(); messages.success(request,"Tarifa guardada."); return redirect("price_rule_list")
     return render(request,"core/price_rule_form.html",{"form":form})
 @owner_required
+@require_http_methods(["GET","POST"])
+def price_rule_edit(request,pk):
+    obj=get_object_or_404(PriceRule,pk=pk,account=request.business_account)
+    form=PriceRuleForm(request.POST or None,instance=obj,account=request.business_account)
+    if request.method=="POST" and form.is_valid():
+        form.save()
+        messages.success(request,"Tarifa actualizada.")
+        return redirect("price_rule_list")
+    return render(request,"core/price_rule_form.html",{"form":form,"title":"Editar tarifa"})
+
+@owner_required
 def reservation_list(request):
     try: year=int(request.GET.get("year",date.today().year)); month=int(request.GET.get("month",date.today().month))
     except ValueError: year,month=date.today().year,date.today().month

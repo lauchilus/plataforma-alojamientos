@@ -62,7 +62,19 @@ def inventory_item_create(request):
     form=InventoryItemForm(request.POST or None,account=request.business_account)
     if request.method=="POST" and form.is_valid():
         form.save(); messages.success(request,"Elemento agregado al inventario."); return redirect("inventory_home")
-    return render(request,"core/inventory_item_form.html",{"form":form})
+    return render(request,"core/inventory_item_form.html",{"form":form,"title":"Nuevo elemento"})
+@owner_required
+@require_http_methods(["GET","POST"])
+def inventory_item_edit(request,pk):
+    from .finance_forms import InventoryItemForm
+    item=get_object_or_404(InventoryItem,pk=pk,account=request.business_account)
+    form=InventoryItemForm(request.POST or None,instance=item,account=request.business_account)
+    if request.method=="POST" and form.is_valid():
+        form.save()
+        messages.success(request,"Elemento actualizado.")
+        return redirect("inventory_home")
+    return render(request,"core/inventory_item_form.html",{"form":form,"title":"Editar elemento"})
+
 @owner_required
 @require_http_methods(["GET","POST"])
 def inventory_movement_create(request):

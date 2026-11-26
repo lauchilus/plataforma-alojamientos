@@ -1,4 +1,5 @@
 from django import forms
+from decimal import Decimal
 from django.core.exceptions import ValidationError
 from .models import BusinessAccount, Accommodation, Reservation
 from .finance_models import Payment, Expense, ExpenseAllocation, InventoryItem, InventoryMovement
@@ -6,6 +7,7 @@ from .services.exchange import convert_currency
 from django.utils import timezone
 
 class PaymentForm(forms.ModelForm):
+    amount=forms.DecimalField(label="Importe recibido",max_digits=14,decimal_places=2,min_value=Decimal("0.01"))
     class Meta:
         model=Payment; fields=["reservation","amount","currency","method","paid_on","reference"]
         widgets={"paid_on":forms.DateInput(attrs={"type":"date"})}
@@ -23,6 +25,7 @@ class PaymentForm(forms.ModelForm):
         return obj
 
 class ExpenseForm(forms.ModelForm):
+    amount=forms.DecimalField(label="Importe",max_digits=14,decimal_places=2,min_value=Decimal("0.01"))
     class Meta:
         model=Expense; fields=["accommodation","category","detail","spent_on","amount","currency"]
         widgets={"spent_on":forms.DateInput(attrs={"type":"date"})}
@@ -38,6 +41,7 @@ class ExpenseForm(forms.ModelForm):
         return obj
 
 class ExpenseAllocationForm(forms.ModelForm):
+    amount_base=forms.DecimalField(label="Importe asignado",max_digits=14,decimal_places=2,min_value=Decimal("0.01"))
     class Meta:
         model=ExpenseAllocation; fields=["expense","accommodation","amount_base"]
     def __init__(self,*args,account=None,**kwargs):

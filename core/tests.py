@@ -62,6 +62,12 @@ class FinanceInventoryTests(TestCase):
   payment=Payment.objects.create(account=self.account,reservation=self.reservation,amount=Decimal("40"),currency="ARS",method="CASH",paid_on=date(2027,1,1),reservation_amount=Decimal("40"),reservation_currency="ARS",base_amount=Decimal("40"),base_currency="ARS")
   self.assertEqual(self.reservation.paid_amount,Decimal("40"))
   self.assertEqual(self.reservation.balance_due,Decimal("60"))
+ def test_currency_conversion_uses_rate_for_selected_date(self):
+  from .services.exchange import convert_currency
+  with patch("core.services.exchange.quote_to_ars") as quote:
+   quote.side_effect=[(Decimal("1000"),date(2027,1,1),"BCRA minorista"),(Decimal("1"),date(2027,1,1),"ARS")]
+   amount,rate,rate_date,source=convert_currency(Decimal("25"),"USD","ARS",date(2027,1,1),"BCRA_MINORISTA_VENDEDOR")
+  self.assertEqual(amount,Decimal("25000.00")); self.assertEqual(rate,Decimal("1000.00000000")); self.assertEqual(rate_date,date(2027,1,1))
  def test_linen_delivery_and_used_return_update_stock(self):
   from .finance_forms import InventoryMovementForm
   item=InventoryItem.objects.create(account=self.account,accommodation=self.unit,name="Sábanas",category="Blanquería",track_per_stay=True,clean_quantity=5)
