@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils.crypto import get_random_string
 from .models import Accommodation, BusinessAccount, Complex, PriceRule, Reservation, Guest
 from .services.pricing import quote_reservation
@@ -71,14 +72,23 @@ class ReservationForm(forms.ModelForm):
         return data
     def save(self,commit=True):
         obj=super().save(commit=False); obj.account=self.account
-        guest=Guest.objects.create(account=self.account,full_name=self.cleaned_data["guest_name"],phone=self.cleaned_data["guest_phone"],email=self.cleaned_data["guest_email"],document_number=self.cleaned_data["guest_document"])
-        obj.guest=guest
-        if self.cleaned_data.get("agreed_price"):
-            obj.total_price=self.cleaned_data["agreed_price"]
-        else:
-            obj.total_price=self.cleaned_data["calculated_price"]
-            obj.currency=self.cleaned_data["calculated_currency"]
-        if commit: obj.full_clean(); obj.save()
+        with transaction.atomic():
+            guest=obj.guest if obj.pk else Guest(account=self.account)
+            guest.account=self.account
+            guest.full_name=self.cleaned_data["guest_name"]
+            guest.phone=self.cleaned_data["guest_phone"]
+            guest.email=self.cleaned_data["guest_email"]
+            guest.document_number=self.cleaned_data["guest_document"]
+            guest.save()
+            obj.guest=guest
+            if self.cleaned_data.get("agreed_price"):
+                obj.total_price=self.cleaned_data["agreed_price"]
+            else:
+                obj.total_price=self.cleaned_data["calculated_price"]
+                obj.currency=self.cleaned_data["calculated_currency"]
+            if commit:
+                obj.full_clean()
+                obj.save()
         return obj
 class CreateOwnerForm(forms.Form):
     business_name=forms.CharField(label="Nombre del negocio",max_length=160)

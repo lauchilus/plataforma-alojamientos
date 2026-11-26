@@ -2,6 +2,7 @@ import calendar
 from datetime import date
 from functools import wraps
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
@@ -114,7 +115,13 @@ def reservation_list(request):
 def reservation_create(request):
     form=ReservationForm(request.POST or None,account=request.business_account)
     if request.method=="POST" and form.is_valid():
-        form.save(); messages.success(request,"Reserva cargada."); return redirect("reservation_list")
+        try:
+            form.save()
+        except ValidationError as exc:
+            form.add_error(None,exc)
+        else:
+            messages.success(request,"Reserva cargada.")
+            return redirect("reservation_list")
     return render(request,"core/reservation_form.html",{"form":form,"title":"Nueva reserva"})
 @owner_required
 @require_http_methods(["GET","POST"])
@@ -122,7 +129,13 @@ def reservation_edit(request,pk):
     obj=get_object_or_404(Reservation,pk=pk,account=request.business_account)
     form=ReservationForm(request.POST or None,instance=obj,account=request.business_account)
     if request.method=="POST" and form.is_valid():
-        form.save(); messages.success(request,"Reserva actualizada."); return redirect("reservation_list")
+        try:
+            form.save()
+        except ValidationError as exc:
+            form.add_error(None,exc)
+        else:
+            messages.success(request,"Reserva actualizada.")
+            return redirect("reservation_list")
     return render(request,"core/reservation_form.html",{"form":form,"title":"Editar reserva"})
 @login_required
 @require_http_methods(["GET","POST"])

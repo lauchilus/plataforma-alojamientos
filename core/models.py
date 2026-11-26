@@ -140,5 +140,14 @@ class Reservation(models.Model):
                 errors["check_in"] = "Ese alojamiento ya tiene una reserva que se superpone con esas fechas."
         if errors:
             raise ValidationError(errors)
+    @property
+    def paid_amount(self):
+        from decimal import Decimal
+        return sum(self.payments.values_list("reservation_amount", flat=True), Decimal("0.00"))
+
+    @property
+    def balance_due(self):
+        return self.total_price - self.paid_amount
+
     def __str__(self):
         return f"{self.accommodation} · {self.check_in}–{self.check_out}"

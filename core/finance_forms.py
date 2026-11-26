@@ -51,6 +51,11 @@ class ExpenseAllocationForm(forms.ModelForm):
             if allocated+amount>expense.base_amount: raise ValidationError("La distribución no puede superar el importe total del gasto general.")
         return data
 
+class BusinessSettingsForm(forms.ModelForm):
+    class Meta:
+        model=BusinessAccount
+        fields=["base_currency","exchange_rate_source"]
+
 class InventoryItemForm(forms.ModelForm):
     class Meta:
         model=InventoryItem; fields=["accommodation","name","category","unit_label","track_per_stay","clean_quantity"]
@@ -73,3 +78,12 @@ class InventoryMovementForm(forms.Form):
         super().__init__(*args,**kwargs); self.account=account
         self.fields["item"].queryset=InventoryItem.objects.filter(account=account,is_active=True).select_related("accommodation")
         self.fields["reservation"].queryset=Reservation.objects.filter(account=account).exclude(status="CANCELLED").select_related("accommodation")
+
+    def clean(self):
+        data=super().clean()
+        item=data.get("item"); reservation=data.get("reservation")
+        if item and item.track_per_stay and not reservation:
+            self.add_error("reservation","Este elemento requiere asociar cada movimiento con una estadía.")
+        if item and reservation and reservation.accommodation_id!=item.accommodation_id:
+            self.add_error("reservation","La estadía seleccionada pertenece a otro alojamiento.")
+        return data

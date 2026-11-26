@@ -10,8 +10,18 @@ from django.views.decorators.http import require_http_methods
 from .views import owner_required
 from .models import Accommodation,Reservation
 from .finance_models import Payment,Expense,ExpenseAllocation,InventoryItem,InventoryMovement
-from .finance_forms import PaymentForm,ExpenseForm,ExpenseAllocationForm,InventoryItemForm,InventoryMovementForm
+from .finance_forms import PaymentForm,ExpenseForm,ExpenseAllocationForm,InventoryItemForm,InventoryMovementForm,BusinessSettingsForm
 from .services.inventory import record_movement
+
+@owner_required
+@require_http_methods(["GET","POST"])
+def business_settings(request):
+    form=BusinessSettingsForm(request.POST or None,instance=request.business_account)
+    if request.method=="POST" and form.is_valid():
+        form.save()
+        messages.success(request,"Configuración financiera actualizada.")
+        return redirect("business_settings")
+    return render(request,"core/business_settings.html",{"form":form})
 
 @owner_required
 def finance_home(request):
@@ -85,4 +95,8 @@ def reports(request):
     reserved=Reservation.objects.filter(account=account,status__in=["PENDING","CONFIRMED","CHECKED_IN","COMPLETED"],check_in__lte=end,check_out__gt=start)
     occupied_days=sum(max(0,(min(r.check_out,end+timedelta(days=1))-max(r.check_in,start)).days) for r in reserved)
     available_days=max(1,Accommodation.objects.filter(account=account,is_active=True).count()*((end-start).days+1))
-    return render(request,"core/reports.html",{"start":start,"end":end,"collected":collected,"expenses":spent,"net":collected-spent,"base_currency":account.base_currency,"units":units,"reservation_count":reserved.count(),"occupancy":min(100,round(100*occupied_days/available_days)),"unallocated_general":expenses.filter(accommodation__isnull=True).aggregate(v=Sum("base_amount"))["v"] or Decimal("0")})
+    unallocated_general=Decimal("0.00")
+    for expense in expenses.filter(accommodation__isnull=True).prefetch_related("allocations"):
+        assigned=sum((row.amount_base for row in expense.allocations.all()),Decimal("0.00"))
+        unallocated_general+=max(Decimal("0.00"),expense.base_amount-assigned)
+    return render(request,"core/reports.html",{"start":start,"end":end,"collected":collected,"expenses":spent,"net":collected-spent,"base_currency":account.base_currency,"units":units,"reservation_count":reserved.count(),"occupancy":min(100,round(100*occupied_days/available_days)),"unallocated_general":unallocated_general})

@@ -57,8 +57,18 @@ class FinanceInventoryTests(TestCase):
   self.assertTrue(form.is_valid(),form.errors)
   payment=form.save()
   self.assertEqual(payment.reservation_amount,Decimal("40.00")); self.assertEqual(payment.base_amount,Decimal("40.00"))
+ def test_reservation_balance_tracks_payments(self):
+  from .finance_models import Payment
+  payment=Payment.objects.create(account=self.account,reservation=self.reservation,amount=Decimal("40"),currency="ARS",method="CASH",paid_on=date(2027,1,1),reservation_amount=Decimal("40"),reservation_currency="ARS",base_amount=Decimal("40"),base_currency="ARS")
+  self.assertEqual(self.reservation.paid_amount,Decimal("40"))
+  self.assertEqual(self.reservation.balance_due,Decimal("60"))
  def test_linen_delivery_and_used_return_update_stock(self):
+  from .finance_forms import InventoryMovementForm
   item=InventoryItem.objects.create(account=self.account,accommodation=self.unit,name="Sábanas",category="Blanquería",track_per_stay=True,clean_quantity=5)
+  form=InventoryMovementForm({"item":item.pk,"movement_type":"DELIVER_CLEAN","quantity":1,"reservation":"","source_state":"","notes":""},account=self.account)
+  self.assertFalse(form.is_valid())
+  self.assertIn("reservation",form.errors)
+  
   record_movement(item,"DELIVER_CLEAN",2,self.account,self.reservation)
   item.refresh_from_db(); self.assertEqual(item.clean_quantity,3); self.assertEqual(item.in_use_quantity,2)
   record_movement(item,"RETURN_USED",1,self.account,self.reservation)

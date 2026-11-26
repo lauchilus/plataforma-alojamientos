@@ -1,6 +1,7 @@
 from django.urls import path
 from . import finance_views as v
 urlpatterns=[
+ path("configuracion/",v.business_settings,name="business_settings"),
  path("finanzas/",v.finance_home,name="finance_home"),
  path("finanzas/pagos/nuevo/",v.payment_create,name="payment_create"),
  path("finanzas/gastos/nuevo/",v.expense_create,name="expense_create"),

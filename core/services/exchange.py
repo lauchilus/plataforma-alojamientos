@@ -55,4 +55,5 @@ def convert_currency(amount, currency_from, currency_to, on_date, source):
     rate_to,date_to,source_to=quote_to_ars(currency_to,on_date,source)
     if rate_to==0: raise ValidationError("La cotización de destino no es válida.")
     converted=(Decimal(amount)*rate_from/rate_to).quantize(Decimal("0.01"))
-    return converted,(rate_from/rate_to).quantize(Decimal("0.00000001")),min(date_from,date_to),source_from if source_from==source_to else f"{source_from} / {source_to}"
+    source_label=source_from if source_from==source_to else f"{source_from} ({date_from}) / {source_to} ({date_to})"
+    return converted,(rate_from/rate_to).quantize(Decimal("0.00000001")),max(date_from,date_to),source_label
