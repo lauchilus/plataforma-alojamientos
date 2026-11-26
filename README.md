@@ -1,24 +1,37 @@
 # Plataforma de alojamientos
 
-Aplicación web de gestión para dueños de cabañas, departamentos y casas de alquiler temporario. Cada dueño administra sus propios complejos, alojamientos, reservas, pagos, inventario y reportes; la plataforma no ofrece reservas públicas.
+Aplicación web de gestión para que distintos dueños administren cabañas, departamentos y casas desde cuentas separadas. No recibe reservas públicas: cada dueño carga sus huéspedes y reservas.
 
-## Estado del MVP
+## MVP implementado en esta rama
 
-La primera etapa cubre cuentas de dueños con cambio obligatorio de contraseña inicial y el catálogo de complejos y alojamientos. Las siguientes etapas agregarán calendario y reservas, precios configurables, cobros en varias monedas con cotización oficial BCRA, gastos, inventario y reportes.
+- Administración de cuentas con contraseña inicial y cambio obligatorio al primer ingreso.
+- Complejos y alojamientos con capacidad, dormitorios, camas, tamaño y tarifa base.
+- Reglas de precios por alojamiento, huéspedes, períodos y mínimo de noches; precio sugerido editable en cada reserva.
+- Calendario mensual y reservas manuales con control de superposición, huéspedes, pagos y saldo.
+- Pagos parciales en varias monedas y medios. Las conversiones consultan el BCRA y guardan cotización, fecha y fuente.
+- Gastos particulares o generales, con opción de distribuir gastos generales entre alojamientos.
+- Inventario configurable; movimientos de blanquería por estadía para entregas limpias, reposiciones, retiros de usadas, limpieza, daños y faltantes.
+- Informes de cobros, gastos, resultado neto, ocupación y resultados por alojamiento.
 
-## Desarrollo local
+## Ejecutar localmente
 
-Requiere Python 3.12+ y usa SQLite para desarrollo. PostgreSQL se configura mediante `DATABASE_URL` para despliegue.
+Requiere Python 3.12+. SQLite se usa para desarrollo local y PostgreSQL para despliegue.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
+    python -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+    python manage.py migrate
+    python manage.py createsuperuser
+    python manage.py runserver
 
-Entrá a `/admin/` con la cuenta administrativa y después a `/plataforma/cuentas/` para crear el acceso inicial de cada dueño. La contraseña temporal debe cambiarse al primer ingreso.
+Con la cuenta administrativa, abrí /plataforma/cuentas/ para crear accesos iniciales de dueños. Cada dueño debe cambiar su contraseña al ingresar.
 
-No agregues credenciales reales al repositorio. Usá variables de entorno para los secretos de despliegue.
+## PostgreSQL y configuración
+
+Definí DATABASE_URL con formato postgresql://usuario:clave@host:5432/base. Para proveedores que requieren SSL, definí DATABASE_SSL=true. Copiá .env.example a .env, completá DJANGO_SECRET_KEY y DJANGO_ALLOWED_HOSTS, y configurá DJANGO_DEBUG=false en producción.
+
+Cada dueño elige la moneda de referencia y la serie del BCRA desde Configuración. Las cotizaciones aplicadas quedan guardadas; cambios posteriores no reescriben operaciones anteriores.
+
+## Verificaciones
+
+GitHub Actions ejecuta el chequeo de Django, comprueba que las migraciones estén sincronizadas y corre las pruebas automatizadas.
